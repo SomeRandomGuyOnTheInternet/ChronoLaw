@@ -1,0 +1,6 @@
+torch
+mlx
+wand
+transformers
+flask
+werkzeug

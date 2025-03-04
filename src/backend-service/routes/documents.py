@@ -17,6 +17,9 @@ UPLOAD_FOLDER = get_file_path('uploads')
 ALLOWED_EXTENSIONS = {'pdf', 'docx'}
 MAX_CONTENT_LENGTH = 10 * 1024 * 1024  # 10MB
 
+PDF_PARSER_ENDPOINT = os.environ.get('PDF_PARSER_ENDPOINT_PATH', 'http://localhost:8503/predict')
+LLM_ENDPOINT = os.environ.get('LLM_ENDPOINT_PATH', "http://localhost:8080/answer")
+
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
@@ -29,17 +32,53 @@ def save_file(file):
     
     return document_id, filename, document_type, file_path
 
+def nougat_pdf_text_extraction(file_path, start_page=None, end_page=None):
+    with open(file_path, 'rb') as pdf_file:
+        files = {'file': pdf_file}
+        
+        data = {}
+        if start_page is not None:
+            data['start'] = start_page
+        if end_page is not None:
+            data['stop'] = end_page
+            
+        log_message(f"Sending PDF to Nougat service with params: {data}")
+        response = requests.post(PDF_PARSER_ENDPOINT, files=files, data=data)
+        
+    if response.status_code != 200:
+        log_message(f"Error from nougat service: {response.text}")
+        raise Exception(f"Nougat service returned status code {response.status_code}")
+    
+    try:
+        result = response.json()
+        if isinstance(result, dict) and 'text' in result:
+            text = result['text']
+        else:
+            text = str(result)
+    except ValueError:
+        text = response.text
+    
+    log_message(f"Extracted text length: {len(text)}")
+    return text
+
+def fallback_pdf_text_extraction(file_path):
+    reader = PdfReader(file_path)
+    text = ""
+    for page in reader.pages:
+        text += page.extract_text() + "\n"
+    return text
+
 def extract_text_from_pdf(file_path):
     try:
-        reader = PdfReader(file_path)
-        text = ""
-        for page in reader.pages:
-            text += page.extract_text() + "\n"
-        print(text)
-        return text
+        return nougat_pdf_text_extraction(file_path)
     except Exception as e:
         log_message(f"Error extracting text from PDF: {e}")
-        raise e
+        try:
+            log_message("Falling back to PyPDF2 for text extraction")
+            return fallback_pdf_text_extraction(file_path)
+        except Exception as fallback_error:
+            log_message(f"Fallback extraction also failed: {fallback_error}")
+            raise e
 
 def extract_text_from_docx(file_path):
     try:
@@ -64,9 +103,8 @@ def extract_dates_and_info(text, document_id, document_name):
         JSON response:
         """
 
-        llm_endpoint = os.environ.get('LLM_ENDPOINT_PATH')
         response = requests.post(
-            llm_endpoint,
+            LLM_ENDPOINT,
             headers={'Content-Type': 'application/json'},
             json={
                 "prompt": prompt,
