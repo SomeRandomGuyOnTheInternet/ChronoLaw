@@ -1,7 +1,9 @@
+import json
 import os
 import requests
 from flask import Blueprint, request, jsonify
 from dotenv import load_dotenv
+from utils import log_message
 
 from models.data import data
 
@@ -9,6 +11,8 @@ if not os.environ.get('LLM_MODEL_PATH'):
     load_dotenv()
 
 chat_bp = Blueprint('chat', __name__)
+
+LLM_ENDPOINT = os.environ.get('LLM_ENDPOINT_PATH', "http://localhost:8080/answer")
 
 def create_timeline_context(events):
     if not events or len(events) == 0:
@@ -23,7 +27,7 @@ def create_timeline_context(events):
         for event in events
     ])
 
-@chat_bp.route('/', methods=['POST'])
+@chat_bp.route('/receive', methods=['POST'])
 def process_chat():
     try:
         request_data = request.get_json()
@@ -50,9 +54,8 @@ def process_chat():
         [/INST]
         """
         
-        llm_endpoint = os.environ.get('LLM_ENDPOINT_PATH')
         response = requests.post(
-            llm_endpoint,
+            LLM_ENDPOINT,
             headers={'Content-Type': 'application/json'},
             json={
                 "prompt": prompt,
@@ -60,10 +63,14 @@ def process_chat():
             }
         )
         
-        response_text = response.text
-        print(f'Chat LLM response: {response_text}')
-        
-        return jsonify({"response": response_text})
+        try:
+            response_json = json.loads(response.text)
+            response_text = str(response_json['content'])
+            return jsonify({"response": response_text})
+        except Exception as e:
+            log_message(f'Error parsing LLM response: {e}')
+            log_message(f'Raw response: {response.text}')
+            raise e
     
     except Exception as e:
         print(f'Error processing chat message: {e}')

@@ -68,7 +68,7 @@ const Chat = ({ timelineEvents }) => {
     setError(null);
     
     try {
-      const response = await axios.post(SERVER_URL + '/api/chat', { message: input });
+      const response = await axios.post(SERVER_URL + '/api/chat/receive', { message: input });
       
       const botMessage = {
         sender: 'bot',
@@ -97,11 +97,14 @@ const Chat = ({ timelineEvents }) => {
   
   return (
     <VStack spacing={4} h="full" align="stretch">
-      <Heading size="lg">Chat with Your Timeline</Heading>
-      <Text>
-        Ask questions about the events in your timeline. The AI will use the information
-        extracted from your documents to provide answers.
-      </Text>
+      <Flex direction="column" h="full">
+      <Box marginBottom={6}>
+        <Heading size="lg" marginBottom={4}>Chat with Your Documents</Heading>
+        <Text>
+          Ask questions about the events in your timeline to your documents. The AI will use the information
+          extracted from your documents to provide answers.
+        </Text>
+      </Box>
       
       {timelineEvents.length === 0 ? (
         <Alert status="warning">
@@ -112,7 +115,7 @@ const Chat = ({ timelineEvents }) => {
           </AlertDescription>
         </Alert>
       ) : (
-        <Flex direction="column" flex="1" h="500px">
+        <Flex direction="column" h="60vh">
           {/* Messages Container */}
           <Box 
             flex="1" 
@@ -121,6 +124,7 @@ const Chat = ({ timelineEvents }) => {
             borderWidth="1px" 
             borderRadius="md"
             mb={4}
+            minH="100%"
           >
             <VStack spacing={4} align="stretch">
               {messages.map((message, index) => (
@@ -198,6 +202,7 @@ const Chat = ({ timelineEvents }) => {
           </HStack>
         </Flex>
       )}
+      </Flex>
     </VStack>
   );
 };

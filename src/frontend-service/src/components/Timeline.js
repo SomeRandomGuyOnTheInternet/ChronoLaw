@@ -164,8 +164,8 @@ const Timeline = ({ events, documents }) => {
                   <CardBody>
                     <VStack align="start" spacing={3}>
                       <Text fontWeight="bold">{event.summary}</Text>
-                      <Text fontSize="sm" color="gray.600">
-                        {event.context}
+                      <Text fontSize="sm" fontStyle="italic" color="gray.600">
+                        "{event.context}"
                       </Text>
                     </VStack>
                   </CardBody>

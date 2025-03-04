@@ -14,80 +14,19 @@ This is the official repository for Nougat, the academic document PDF parser tha
 
 Project page: https://facebookresearch.github.io/nougat/
 
-## Install
-
-From pip:
-```
-pip install nougat-ocr
-```
-
-From repository:
-```
-pip install git+https://github.com/facebookresearch/nougat
-```
-
-> Note, on Windows: If you want to utilize a GPU, make sure you first install the correct PyTorch version. Follow instructions [here](https://pytorch.org/get-started/locally/)
-
-There are extra dependencies if you want to call the model from an API or generate a dataset.
-Install via
-
-`pip install "nougat-ocr[api]"` or `pip install "nougat-ocr[dataset]"`
-
 ### Get prediction for a PDF
-#### CLI
-
-To get predictions for a PDF run
-
-```
-$ nougat path/to/file.pdf -o output_directory
-```
-
-A path to a directory or to a file where each line is a path to a PDF can also be passed as a positional argument
-
-```
-$ nougat path/to/directory -o output_directory
-```
-
-```
-usage: nougat [-h] [--batchsize BATCHSIZE] [--checkpoint CHECKPOINT] [--model MODEL] [--out OUT]
-              [--recompute] [--markdown] [--no-skipping] pdf [pdf ...]
-
-positional arguments:
-  pdf                   PDF(s) to process.
-
-options:
-  -h, --help            show this help message and exit
-  --batchsize BATCHSIZE, -b BATCHSIZE
-                        Batch size to use.
-  --checkpoint CHECKPOINT, -c CHECKPOINT
-                        Path to checkpoint directory.
-  --model MODEL_TAG, -m MODEL_TAG
-                        Model tag to use.
-  --out OUT, -o OUT     Output directory.
-  --recompute           Recompute already computed PDF, discarding previous predictions.
-  --full-precision      Use float32 instead of bfloat16. Can speed up CPU conversion for some setups.
-  --no-markdown         Do not add postprocessing step for markdown compatibility.
-  --markdown            Add postprocessing step for markdown compatibility (default).
-  --no-skipping         Don't apply failure detection heuristic.
-  --pages PAGES, -p PAGES
-                        Provide page numbers like '1-4,7' for pages 1 through 4 and page 7. Only works for single PDFs.
-```
-
-The default model tag is `0.1.0-small`. If you want to use the base model, use `0.1.0-base`.
-```
-$ nougat path/to/file.pdf -o output_directory -m 0.1.0-base
-```
-
-In the output directory every PDF will be saved as a `.mmd` file, the lightweight markup language, mostly compatible with [Mathpix Markdown](https://github.com/Mathpix/mathpix-markdown-it) (we make use of the LaTeX tables).
-
-> Note: On some devices the failure detection heuristic is not working properly. If you experience a lot of `[MISSING_PAGE]` responses, try to run with the `--no-skipping` flag. Related: [#11](https://github.com/facebookresearch/nougat/issues/11), [#67](https://github.com/facebookresearch/nougat/issues/67)
-
 #### API
 
-With the extra dependencies you use `app.py` to start an API. Call
+Install Dependencies
 
 ```sh
-$ nougat_api
+$ pip install .
+```
+
+Run the app
+
+```sh
+$ python app.py
 ```
 
 To get a prediction of a PDF file by making a POST request to http://127.0.0.1:8503/predict/. It also accepts parameters `start` and `stop` to limit the computation to select page numbers (boundaries are included).

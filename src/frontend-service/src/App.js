@@ -58,7 +58,7 @@ function App() {
           onChange={setTabIndex}
         >
           <TabList mb={4}>
-            <Tab>Upload Documents</Tab>
+            <Tab>Documents</Tab>
             <Tab isDisabled={timelineEvents.length === 0}>Timeline</Tab>
             <Tab isDisabled={timelineEvents.length === 0}>Chat</Tab>
           </TabList>
