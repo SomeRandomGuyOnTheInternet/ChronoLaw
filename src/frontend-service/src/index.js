@@ -2,6 +2,7 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { ChakraProvider, extendTheme } from '@chakra-ui/react';
 import App from './App';
+import './index.css';
 
 // Extend the theme to include custom colors, fonts, etc
 const theme = extendTheme({
@@ -20,9 +21,9 @@ const theme = extendTheme({
     },
   },
   fonts: {
-    heading: '"Roboto", sans-serif',
-    body: '"Open Sans", sans-serif',
-  },
+    heading: '"DM Sans", sans-serif',
+    body: '"DM Sans", sans-serif',
+},
   config: {
     initialColorMode: 'light',
     useSystemColorMode: false,

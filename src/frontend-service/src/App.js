@@ -56,11 +56,12 @@ function App() {
           colorScheme="brand" 
           index={tabIndex} 
           onChange={setTabIndex}
+          height="100%"
         >
           <TabList mb={4}>
             <Tab>Documents</Tab>
             <Tab isDisabled={timelineEvents.length === 0}>Timeline</Tab>
-            <Tab isDisabled={timelineEvents.length === 0}>Chat</Tab>
+            <Tab>Chat</Tab>
           </TabList>
 
           <TabPanels>

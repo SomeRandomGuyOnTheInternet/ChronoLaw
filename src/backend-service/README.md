@@ -19,7 +19,7 @@ This is the Flask backend for the ChronoLaw application, which processes legal d
    ```
    # LLM Model Configuration
    LLM_MODEL_PATH=models/Mistral-7B-Instruct-v0.3.Q8_0.gguf
-   LLM_CONTEXT_SIZE=2048
+   LLM_CONTEXT_SIZE=5000
    LLM_BATCH_SIZE=512
    LLM_GPU_LAYERS=0
    LLM_ENDPOINT_PATH=http://localhost:8080/completion

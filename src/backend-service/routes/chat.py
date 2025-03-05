@@ -37,20 +37,19 @@ def process_chat():
             return jsonify({"message": "No message provided"}), 400
         
         timeline_context = create_timeline_context(data.timeline_events)
+        log_message(timeline_context, prefix="Timeline Context")
         
         prompt = f"""
         [INST]
-        <<SYS>>
-        You are an assistant for a legal case timeline. You have access to the following timeline of events extracted from legal documents:
+        You are an assistant for a legal case. You are to answer questions based on just the relevant text extracted from various documents. This is the text:
         
         {timeline_context}
         
-        Answer questions based on the timeline above. If the information is not in the timeline, say that you don't have that information.
+        If the question falls out of the scope of the text above, just say that you cannot answer that question.
         Be concise, accurate, and helpful. Cite the document names when providing information.
-        <</SYS>>
+        This is the question from the user:
 
         {message}
-
         [/INST]
         """
         
@@ -59,13 +58,14 @@ def process_chat():
             headers={'Content-Type': 'application/json'},
             json={
                 "prompt": prompt,
-                "n_predict": int(os.environ.get('LLM_CONTEXT_SIZE', '2048'))
+                "n_predict": int(5000)
             }
         )
         
         try:
             response_json = json.loads(response.text)
-            response_text = str(response_json['content'])
+            log_message(response_json['content'], prefix="Chat Reponse")
+            response_text = response_json['content']
             return jsonify({"response": response_text})
         except Exception as e:
             log_message(f'Error parsing LLM response: {e}')

@@ -112,7 +112,7 @@ const DocumentUpload = ({ onDocumentsProcessed, setIsLoading }) => {
   };
 
   return (
-    <VStack spacing={6} align="stretch">
+    <VStack spacing={4} align="stretch">
       <Heading size="lg">Upload Documents</Heading>
       <Text>
         Upload PDF or DOCX documents containing dates and events. The system will analyze the documents

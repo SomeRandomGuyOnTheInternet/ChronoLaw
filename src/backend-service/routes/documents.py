@@ -5,7 +5,7 @@ from datetime import datetime
 from flask import Blueprint, request, jsonify
 from werkzeug.utils import secure_filename
 import requests
-from PyPDF2 import PdfReader
+import pymupdf
 import docx2txt
 
 from models.data import data
@@ -42,7 +42,7 @@ def nougat_pdf_text_extraction(file_path, start_page=None, end_page=None):
         if end_page is not None:
             data['stop'] = end_page
             
-        log_message(f"Sending PDF to Nougat service with params: {data}")
+        log_message(f"Sending PDF to Nougat service with params: {data}", prefix="Sending PDF")
         response = requests.post(PDF_PARSER_ENDPOINT, files=files, data=data)
         
     if response.status_code != 200:
@@ -51,6 +51,7 @@ def nougat_pdf_text_extraction(file_path, start_page=None, end_page=None):
     
     try:
         result = response.json()
+        log_message(result, prefix="Parsed PDF")
         if isinstance(result, dict) and 'text' in result:
             text = result['text']
         else:
@@ -62,10 +63,11 @@ def nougat_pdf_text_extraction(file_path, start_page=None, end_page=None):
     return text
 
 def fallback_pdf_text_extraction(file_path):
-    reader = PdfReader(file_path)
+    reader = pymupdf.open(file_path)
     text = ""
-    for page in reader.pages:
-        text += page.extract_text() + "\n"
+    for page in reader:
+        text += page.get_text() + "\n"
+    log_message(text, prefix="pymupdf")
     return text
 
 def extract_text_from_pdf(file_path):
@@ -88,14 +90,15 @@ def extract_text_from_docx(file_path):
         log_message(f"Error extracting text from DOCX: {e}")
         raise e
 
-def extract_dates_and_info(text, document_id, document_name):
+def extract_events_from_text(text, document_id, document_name):
     try:
         prompt = f"""
-        Extract all dates mentioned in the following document along with relevant information about what happened on those dates. 
+        Extract all events that would be pertinent to a court case mentioned in the following document along with the dates in which they occured. Every event you select must have a date associated with it according to the text.
         Format your response as a JSON array of objects, where each object has:
-        - date: The date in YYYY-MM-DD format
-        - summary: A concise summary of what happened on that date
-        - context: The relevant text from the document that mentions this date
+        - date: The date in YYYY-MM-DD or MM-DD or YYYY format depending on the dates mentioned in the document. If the event occurs over a range of time, this would be the start date.
+        - end_date: If the event occurs over a range of time, enter the end date of the event in YYYY-MM-DD or MM-DD or YYYY format depending on the dates mentioned in the document.
+        - summary: A concise summary of the event.
+        - context: The relevant text from the document that mentions the event. If the text is split across multiple sentences, add the following characters: [...]. The context should always contain the event date.
         
         Document text:
         {text}
@@ -108,7 +111,7 @@ def extract_dates_and_info(text, document_id, document_name):
             headers={'Content-Type': 'application/json'},
             json={
                 "prompt": prompt,
-                "n_predict": int(os.environ.get('LLM_CONTEXT_SIZE', '2048'))
+                "n_predict": int(5000)
             }
         )
 
@@ -129,7 +132,7 @@ def extract_dates_and_info(text, document_id, document_name):
         
         return events
     except Exception as e:
-        log_message(f'Error extracting dates and info: {e}')
+        log_message(f'Error extracting events: {e}')
         return []
 
 @documents_bp.route('/upload', methods=['POST'])
@@ -152,6 +155,7 @@ def upload_documents():
                 text = ""
                 if document_type == '.pdf':
                     text = extract_text_from_pdf(file_path)
+                    return jsonify({"message": "There was no text in one of the files that was uploaded"}), 400
                 elif document_type == '.docx':
                     text = extract_text_from_docx(file_path)
                 
@@ -170,7 +174,7 @@ def upload_documents():
                 data.documents.append(document)
                 uploaded_documents.append(document)
                 
-                events = extract_dates_and_info(text, document_id, filename)
+                events = extract_events_from_text(text, document_id, filename)
                 new_events.extend(events)
         
         data.timeline_events.extend(new_events)

@@ -29,19 +29,19 @@ const Chat = ({ timelineEvents }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
   const messagesEndRef = useRef(null);
-  
+
   const userBgColor = useColorModeValue('brand.100', 'brand.900');
   const botBgColor = useColorModeValue('gray.100', 'gray.700');
-  
+
   // Scroll to bottom of messages
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
-  
+
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
-  
+
   // Add initial welcome message
   useEffect(() => {
     if (messages.length === 0) {
@@ -53,155 +53,156 @@ const Chat = ({ timelineEvents }) => {
       ]);
     }
   }, [messages]);
-  
+
   const handleSendMessage = async () => {
     if (!input.trim()) return;
-    
+
     const userMessage = {
       sender: 'user',
       text: input
     };
-    
+
     setMessages(prev => [...prev, userMessage]);
     setInput('');
     setIsLoading(true);
     setError(null);
-    
+
     try {
       const response = await axios.post(SERVER_URL + '/api/chat/receive', { message: input });
-      
+
       const botMessage = {
         sender: 'bot',
         text: response.data.response
       };
-      
+
       setMessages(prev => [...prev, botMessage]);
     } catch (error) {
       console.error('Error sending message:', error);
-      
+
       setError(
-        error.response?.data?.message || 
+        error.response?.data?.message ||
         'An error occurred while processing your message. Please try again.'
       );
     } finally {
       setIsLoading(false);
     }
   };
-  
+
   const handleKeyPress = (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       handleSendMessage();
     }
   };
-  
+
   return (
-    <VStack spacing={4} h="full" align="stretch">
-      <Flex direction="column" h="full">
-      <Box marginBottom={6}>
-        <Heading size="lg" marginBottom={4}>Chat with Your Documents</Heading>
-        <Text>
-          Ask questions about the events in your timeline to your documents. The AI will use the information
-          extracted from your documents to provide answers.
-        </Text>
-      </Box>
-      
-      {timelineEvents.length === 0 ? (
-        <Alert status="warning">
-          <AlertIcon />
-          <AlertTitle>No timeline data available</AlertTitle>
-          <AlertDescription>
-            Please upload and process documents first to generate a timeline that can be queried.
-          </AlertDescription>
-        </Alert>
-      ) : (
-        <Flex direction="column" h="60vh">
-          {/* Messages Container */}
-          <Box 
-            flex="1" 
-            overflowY="auto" 
-            p={4} 
-            borderWidth="1px" 
-            borderRadius="md"
-            mb={4}
-            minH="100%"
-          >
-            <VStack spacing={4} align="stretch">
-              {messages.map((message, index) => (
-                <Flex 
-                  key={index} 
-                  justify={message.sender === 'user' ? 'flex-end' : 'flex-start'}
-                >
-                  <HStack 
-                    alignItems="flex-start" 
-                    spacing={2} 
-                    maxW="80%"
+    <VStack spacing={4} align="stretch">
+      <Flex direction="column" gap="4" overflow="hidden">
+        <Box marginBottom={4}>
+          <Heading size="lg" marginBottom={4}>Chat with Your Documents</Heading>
+          <Text>
+            Ask questions about the events in your timeline to your documents. The AI will use the information
+            extracted from your documents to provide answers.
+          </Text>
+        </Box>
+
+        {timelineEvents.length === 0 ? (
+          <Alert status="warning">
+            <AlertIcon />
+            <AlertTitle>No timeline data available</AlertTitle>
+            <AlertDescription>
+              Please upload and process documents first to generate a timeline that can be queried.
+            </AlertDescription>
+          </Alert>
+        ) : (
+          <Flex direction="column" overflow="hidden">
+            {/* Messages Container */}
+            <Box
+              overflowY="auto"
+              p={4}
+              borderWidth="1px"
+              borderRadius="md"
+              mb={4}
+              grow={1}
+              minH="200px"
+              h="50dvh"
+            >
+              <VStack spacing={4} align="stretch">
+                {messages.map((message, index) => (
+                  <Flex
+                    key={index}
+                    justify={message.sender === 'user' ? 'flex-end' : 'flex-start'}
                   >
-                    {message.sender === 'bot' && (
-                      <Avatar size="sm" name="ChronoLaw" bg="brand.500" />
-                    )}
-                    
-                    <Card 
-                      bg={message.sender === 'user' ? userBgColor : botBgColor}
-                      borderRadius="lg"
+                    <HStack
+                      alignItems="flex-start"
+                      spacing={2}
+                      maxW="80%"
                     >
-                      <CardBody py={2} px={3}>
-                        <Text>{message.text}</Text>
-                      </CardBody>
-                    </Card>
-                    
-                    {message.sender === 'user' && (
-                      <Avatar size="sm" name="User" bg="gray.500" />
-                    )}
-                  </HStack>
-                </Flex>
-              ))}
-              
-              {isLoading && (
-                <Flex justify="flex-start">
-                  <HStack alignItems="center" spacing={2}>
-                    <Avatar size="sm" name="ChronoLaw" bg="brand.500" />
-                    <Card bg={botBgColor} borderRadius="lg">
-                      <CardBody py={2} px={4}>
-                        <Spinner size="sm" mr={2} />
-                        <Text as="span">Thinking...</Text>
-                      </CardBody>
-                    </Card>
-                  </HStack>
-                </Flex>
-              )}
-              
-              {error && (
-                <Alert status="error" borderRadius="md">
-                  <AlertIcon />
-                  {error}
-                </Alert>
-              )}
-              
-              <div ref={messagesEndRef} />
-            </VStack>
-          </Box>
-          
-          {/* Input Area */}
-          <HStack>
-            <Input
-              placeholder="Ask a question about your timeline..."
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyPress={handleKeyPress}
-              disabled={isLoading || timelineEvents.length === 0}
-            />
-            <IconButton
-              colorScheme="brand"
-              aria-label="Send message"
-              icon={<ArrowUpIcon />}
-              onClick={handleSendMessage}
-              isLoading={isLoading}
-              disabled={!input.trim() || timelineEvents.length === 0}
-            />
-          </HStack>
-        </Flex>
-      )}
+                      {message.sender === 'bot' && (
+                        <Avatar size="sm" name="ChronoLaw" bg="brand.500" />
+                      )}
+
+                      <Card
+                        bg={message.sender === 'user' ? userBgColor : botBgColor}
+                        borderRadius="lg"
+                      >
+                        <CardBody py={2} px={3}>
+                          <Text>{message.text}</Text>
+                        </CardBody>
+                      </Card>
+
+                      {message.sender === 'user' && (
+                        <Avatar size="sm" name="User" bg="gray.500" />
+                      )}
+                    </HStack>
+                  </Flex>
+                ))}
+
+                {isLoading && (
+                  <Flex justify="flex-start">
+                    <HStack alignItems="center" spacing={2}>
+                      <Avatar size="sm" name="ChronoLaw" bg="brand.500" />
+                      <Card bg={botBgColor} borderRadius="lg">
+                        <CardBody py={2} px={4}>
+                          <Spinner size="sm" mr={2} />
+                          <Text as="span">Thinking...</Text>
+                        </CardBody>
+                      </Card>
+                    </HStack>
+                  </Flex>
+                )}
+
+                {error && (
+                  <Alert status="error" borderRadius="md">
+                    <AlertIcon />
+                    {error}
+                  </Alert>
+                )}
+
+                <div ref={messagesEndRef} />
+              </VStack>
+            </Box>
+
+            {/* Input Area */}
+            <HStack>
+              <Input
+                placeholder="Ask a question about your timeline..."
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyPress={handleKeyPress}
+                disabled={isLoading || timelineEvents.length === 0}
+              />
+              <IconButton
+                colorScheme="brand"
+                aria-label="Send message"
+                icon={<ArrowUpIcon />}
+                onClick={handleSendMessage}
+                isLoading={isLoading}
+                disabled={!input.trim() || timelineEvents.length === 0}
+              />
+            </HStack>
+          </Flex>
+        )}
       </Flex>
     </VStack>
   );
