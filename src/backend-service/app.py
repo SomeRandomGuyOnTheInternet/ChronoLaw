@@ -4,7 +4,7 @@ from flask_cors import CORS
 from dotenv import load_dotenv
 import pathlib
 
-load_dotenv()
+load_dotenv(override=True)
 
 current_dir = pathlib.Path(__file__).parent.absolute()
 uploads_dir = current_dir / 'uploads'

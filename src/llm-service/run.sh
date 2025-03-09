@@ -44,4 +44,6 @@ cp "$BUILD_DIR/bin/"* "$INSTALL_DIR"
 
 echo "Running the application..."
 cd "$INSTALL_DIR"
-./server -m $APP_DIR/models/Mistral-7B-Instruct-v0.3.Q8_0.gguf -c 2048
+./server -m $APP_DIR/models/Mistral-7B-Instruct-v0.3.Q8_0.gguf -c 8192
+# ./server -m $APP_DIR/models/qwen2.5-14b-instruct-q5_k_m-00001-of-00003.gguf -c 8192
+

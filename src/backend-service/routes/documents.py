@@ -93,12 +93,13 @@ def extract_text_from_docx(file_path):
 def extract_events_from_text(text, document_id, document_name):
     try:
         prompt = f"""
-        Extract all events that would be pertinent to a court case mentioned in the following document along with the dates in which they occured. Every event you select must have a date associated with it according to the text.
-        Format your response as a JSON array of objects, where each object has:
+        You are to assist law firms with forming a timeline of events by extracting time based information or events from the provided and return a list of events with the event's date, summary, and the context from the text.
+        This text can be from a legal document, a news article, an email thread, or any other source. 
+        Do not make inferences of your own. Only extract relevant events that are explicitly mentioned in the text.
+        Format the timeline as a JSON array of objects, where each object has:
         - date: The date in YYYY-MM-DD or MM-DD or YYYY format depending on the dates mentioned in the document. If the event occurs over a range of time, this would be the start date.
-        - end_date: If the event occurs over a range of time, enter the end date of the event in YYYY-MM-DD or MM-DD or YYYY format depending on the dates mentioned in the document.
         - summary: A concise summary of the event.
-        - context: The relevant text from the document that mentions the event. If the text is split across multiple sentences, add the following characters: [...]. The context should always contain the event date.
+        - context: The relevant text from the document that mentions the event. The context should contain the event date.
         
         Document text:
         {text}
@@ -111,7 +112,7 @@ def extract_events_from_text(text, document_id, document_name):
             headers={'Content-Type': 'application/json'},
             json={
                 "prompt": prompt,
-                "n_predict": int(5000)
+                "n_predict": int(os.environ.get('LLM_CONTEXT_SIZE', '8192'))
             }
         )
 
@@ -155,7 +156,7 @@ def upload_documents():
                 text = ""
                 if document_type == '.pdf':
                     text = extract_text_from_pdf(file_path)
-                    return jsonify({"message": "There was no text in one of the files that was uploaded"}), 400
+                    # return jsonify({"message": "Text is extracted"}), 200
                 elif document_type == '.docx':
                     text = extract_text_from_docx(file_path)
                 

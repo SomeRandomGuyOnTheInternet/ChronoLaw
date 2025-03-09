@@ -54,7 +54,7 @@ ChronoLaw uses environment variables for configuration. These are stored in a `.
 | Variable | Description | Default |
 |----------|-------------|---------|
 | `LLM_MODEL_PATH` | Path to the LLM model file (relative to project root) | `models/llama-2-7b-chat.gguf` |
-| `LLM_CONTEXT_SIZE` | Context size for the LLM | `2048` |
+| `LLM_CONTEXT_SIZE` | Context size for the LLM | `8192` |
 | `LLM_BATCH_SIZE` | Batch size for the LLM | `512` |
 | `LLM_GPU_LAYERS` | Number of layers to offload to GPU (0 for CPU only) | `0` |
 | `PORT` | Port for the server to listen on | `5000` |
