@@ -136,7 +136,7 @@ const Mindmap = ({ timelineEvents, documents }) => {
     const nodes = [];
     const connections = [];
     const nodeMap = {};
-    const verticalSpacing = (canvasHeight - 2 * padding) / Math.max(1, uniqueDates.length - 1);
+    const verticalSpacing = (45) * Math.max(1, uniqueDates.length - 1);
     
     uniqueDates.forEach((dateKey, dateIndex) => {
       const eventsOnThisDate = eventsByDate[dateKey];
