@@ -97,18 +97,41 @@ const Mindmap = ({ timelineEvents, documents }) => {
     const canvasHeight = 800;
     const padding = 100;
     
+    // Group events by date
     const eventsByDate = {};
     events.forEach(event => {
-      const dateKey = event.date.split('T')[0];
+      // Handle different date formats
+      let dateKey;
+      if (typeof event.date === 'string') {
+        // Try to extract date part from ISO string or other string formats
+        if (event.date.includes('T')) {
+          dateKey = event.date.split('T')[0]; // ISO format with time
+        } else if (event.date.includes(' ')) {
+          dateKey = event.date.split(' ')[0]; // Space-separated format
+        } else {
+          dateKey = event.date; // Already just a date
+        }
+      } else if (event.date instanceof Date) {
+        // If it's a Date object, convert to YYYY-MM-DD
+        dateKey = event.date.toISOString().split('T')[0];
+      } else {
+        // Fallback to using the whole date value as a string
+        dateKey = String(event.date);
+      }
+      
       if (!eventsByDate[dateKey]) {
         eventsByDate[dateKey] = [];
       }
       eventsByDate[dateKey].push(event);
     });
     
+    // Sort dates chronologically
     const uniqueDates = Object.keys(eventsByDate).sort((a, b) => {
       return new Date(a) - new Date(b);
     });
+    
+    console.log("Unique dates:", uniqueDates);
+    console.log("Events by date:", eventsByDate);
     
     const nodes = [];
     const connections = [];
@@ -125,79 +148,115 @@ const Mindmap = ({ timelineEvents, documents }) => {
           ? canvasWidth / 2 
           : padding + eventIndex * horizontalSpacing;
         
+        // Create node with consistent structure
         const node = {
-          id: event.id,
+          id: event.id || `event-${dateIndex}-${eventIndex}`, // Fallback ID if none provided
           title: event.title,
           date: formatDate(event.date),
           x: x,
           y: y,
-          details: {
-            description: event.description,
-            participants: event.participants,
-            documents: event.documents,
-            location: event.location,
-            context: event.context
-          }
+          description: event.description,
+          participants: event.participants || [],
+          documents: event.documents || [],
+          location: event.location || "",
+          context: event.context || ""
         };
         
         nodes.push(node);
-        nodeMap[event.id] = { x, y, dateIndex };
+        nodeMap[node.id] = { x, y, dateIndex };
       });
     });
     
-    for (let dateIndex = 0; dateIndex < uniqueDates.length - 1; dateIndex++) {
-      const currentDateKey = uniqueDates[dateIndex];
-      const nextDateKey = uniqueDates[dateIndex + 1];
+    // Create connections between events on different dates
+    if (uniqueDates.length > 1) {
+      console.log("Creating connections between dates");
       
-      const currentDateEvents = eventsByDate[currentDateKey];
-      const nextDateEvents = eventsByDate[nextDateKey];
-      
-      if (currentDateEvents.length === 1 && nextDateEvents.length === 1) {
-        connections.push({
-          from: currentDateEvents[0].id,
-          to: nextDateEvents[0].id,
-          type: "straight"
-        });
-      } else if (currentDateEvents.length === 1) {
-        nextDateEvents.forEach(nextEvent => {
+      for (let dateIndex = 0; dateIndex < uniqueDates.length - 1; dateIndex++) {
+        const currentDateKey = uniqueDates[dateIndex];
+        const nextDateKey = uniqueDates[dateIndex + 1];
+        
+        const currentDateEvents = eventsByDate[currentDateKey];
+        const nextDateEvents = eventsByDate[nextDateKey];
+        
+        console.log(`Connecting events from ${currentDateKey} to ${nextDateKey}`);
+        console.log(`Current date events: ${currentDateEvents.length}, Next date events: ${nextDateEvents.length}`);
+        
+        // Make sure we have valid event IDs
+        const currentEventIds = currentDateEvents.map(event => event.id || `event-${dateIndex}-${currentDateEvents.indexOf(event)}`);
+        const nextEventIds = nextDateEvents.map(event => event.id || `event-${dateIndex+1}-${nextDateEvents.indexOf(event)}`);
+        
+        console.log("Current event IDs:", currentEventIds);
+        console.log("Next event IDs:", nextEventIds);
+        
+        // If there's only one event on each date, connect them with a straight line
+        if (currentDateEvents.length === 1 && nextDateEvents.length === 1) {
           connections.push({
-            from: currentDateEvents[0].id,
-            to: nextEvent.id,
-            type: "curved"
+            from: currentEventIds[0],
+            to: nextEventIds[0],
+            type: "straight"
           });
-        });
-      } else if (nextDateEvents.length === 1) {
-        currentDateEvents.forEach(currentEvent => {
-          connections.push({
-            from: currentEvent.id,
-            to: nextDateEvents[0].id,
-            type: "curved"
+        } 
+        // If there's only one event on the current date, connect it to all events on the next date
+        else if (currentDateEvents.length === 1) {
+          nextEventIds.forEach(nextId => {
+            connections.push({
+              from: currentEventIds[0],
+              to: nextId,
+              type: "curved"
+            });
           });
-        });
-      } else {
-        currentDateEvents.forEach(currentEvent => {
-          const currentNodePos = nodeMap[currentEvent.id];
-          
-          let closestEvent = nextDateEvents[0];
-          let minDistance = Math.abs(currentNodePos.x - nodeMap[closestEvent.id].x);
-          
-          for (let i = 1; i < nextDateEvents.length; i++) {
-            const nextEvent = nextDateEvents[i];
-            const nextNodePos = nodeMap[nextEvent.id];
-            const distance = Math.abs(currentNodePos.x - nextNodePos.x);
+        } 
+        // If there's only one event on the next date, connect all events on the current date to it
+        else if (nextDateEvents.length === 1) {
+          currentEventIds.forEach(currentId => {
+            connections.push({
+              from: currentId,
+              to: nextEventIds[0],
+              type: "curved"
+            });
+          });
+        } 
+        // If there are multiple events on both dates, connect each event on the current date
+        // to the closest event on the next date (based on horizontal position)
+        else {
+          currentDateEvents.forEach((currentEvent, currentIndex) => {
+            const currentId = currentEventIds[currentIndex];
+            const currentNodePos = nodeMap[currentId];
             
-            if (distance < minDistance) {
-              minDistance = distance;
-              closestEvent = nextEvent;
+            if (!currentNodePos) {
+              console.error(`Node position not found for ID: ${currentId}`);
+              return;
             }
-          }
-          
-          connections.push({
-            from: currentEvent.id,
-            to: closestEvent.id,
-            type: "curved"
+            
+            let closestEvent = nextDateEvents[0];
+            let closestId = nextEventIds[0];
+            let minDistance = Math.abs(currentNodePos.x - nodeMap[closestId]?.x || 0);
+            
+            for (let i = 1; i < nextDateEvents.length; i++) {
+              const nextId = nextEventIds[i];
+              const nextNodePos = nodeMap[nextId];
+              
+              if (!nextNodePos) {
+                console.error(`Node position not found for ID: ${nextId}`);
+                continue;
+              }
+              
+              const distance = Math.abs(currentNodePos.x - nextNodePos.x);
+              
+              if (distance < minDistance) {
+                minDistance = distance;
+                closestEvent = nextDateEvents[i];
+                closestId = nextId;
+              }
+            }
+            
+            connections.push({
+              from: currentId,
+              to: closestId,
+              type: "curved"
+            });
           });
-        });
+        }
       }
     }
     
@@ -303,11 +362,26 @@ const Mindmap = ({ timelineEvents, documents }) => {
   };
   
   const renderConnections = () => {
+    console.log("Rendering connections:", mindmapData.connections);
+    
+    if (!mindmapData.connections || mindmapData.connections.length === 0) {
+      console.log("No connections to render");
+      return null;
+    }
+    
     return mindmapData.connections.map((connection, index) => {
+      console.log(`Rendering connection ${index}:`, connection);
+      
       const fromNode = mindmapData.nodes.find(n => n.id === connection.from);
       const toNode = mindmapData.nodes.find(n => n.id === connection.to);
       
-      if (!fromNode || !toNode) return null;
+      if (!fromNode || !toNode) {
+        console.error(`Could not find nodes for connection: from=${connection.from}, to=${connection.to}`);
+        console.log("Available node IDs:", mindmapData.nodes.map(n => n.id));
+        return null;
+      }
+      
+      console.log(`Drawing connection from (${fromNode.x},${fromNode.y}) to (${toNode.x},${toNode.y})`);
       
       const markerId = `arrowhead-${index}`;
       
@@ -524,7 +598,7 @@ const Mindmap = ({ timelineEvents, documents }) => {
               <VStack align="stretch" spacing={4}>
                 <Box>
                   <Heading size="sm" mb={2}>Description</Heading>
-                  <Text>{selectedNode.details.description}</Text>
+                  <Text>{selectedNode.description}</Text>
                 </Box>
                 
                 <Box>
@@ -535,7 +609,7 @@ const Mindmap = ({ timelineEvents, documents }) => {
                     </Flex>
                   </Heading>
                   <Flex wrap="wrap" gap={2}>
-                    {selectedNode.details.participants.map((participant, index) => (
+                    {selectedNode.participants.map((participant, index) => (
                       <Badge key={index} colorScheme="blue" py={1} px={2} borderRadius="md">
                         {participant}
                       </Badge>
@@ -551,7 +625,7 @@ const Mindmap = ({ timelineEvents, documents }) => {
                     </Flex>
                   </Heading>
                   <VStack align="stretch" spacing={1}>
-                    {selectedNode.details.documents.map((doc, index) => (
+                    {selectedNode.documents.map((doc, index) => (
                       <Text key={index} pl={2} borderLeftWidth="2px" borderColor="blue.400">
                         {doc}
                       </Text>
@@ -566,13 +640,13 @@ const Mindmap = ({ timelineEvents, documents }) => {
                       Location
                     </Flex>
                   </Heading>
-                  <Text>{selectedNode.details.location}</Text>
+                  <Text>{selectedNode.location}</Text>
                 </Box>
                 
-                {selectedNode.details.context && (
+                {selectedNode.context && (
                   <Box>
                     <Heading size="sm" mb={2}>Context</Heading>
-                    <Text>{selectedNode.details.context}</Text>
+                    <Text>{selectedNode.context}</Text>
                   </Box>
                 )}
               </VStack>

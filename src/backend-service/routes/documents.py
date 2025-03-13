@@ -9,7 +9,7 @@ import pymupdf
 import docx2txt
 
 from models.data import data
-from utils import get_file_path, log_message
+from utils import get_file_path, log_message, document_extraction_grammar, document_extraction_prompt
 
 documents_bp = Blueprint('documents', __name__)
 
@@ -92,27 +92,13 @@ def extract_text_from_docx(file_path):
 
 def extract_events_from_text(text, document_id, document_name):
     try:
-        prompt = f"""
-        You are to assist law firms with forming a timeline of events by extracting time based information or events from the provided and return a list of events with the event's date, summary, and the context from the text.
-        This text can be from a legal document, a news article, an email thread, or any other source. 
-        Do not make inferences of your own. Only extract relevant events that are explicitly mentioned in the text.
-        Format the timeline as a JSON array of objects, where each object has:
-        - date: The date in YYYY-MM-DD or MM-DD or YYYY format depending on the dates mentioned in the document. If the event occurs over a range of time, this would be the start date.
-        - summary: A concise summary of the event.
-        - context: The relevant text from the document that mentions the event. The context should contain the event date.
-        
-        Document text:
-        {text}
-        
-        JSON response:
-        """
-
         response = requests.post(
             LLM_ENDPOINT,
             headers={'Content-Type': 'application/json'},
             json={
-                "prompt": prompt,
-                "n_predict": int(os.environ.get('LLM_CONTEXT_SIZE', '8192'))
+                "prompt": document_extraction_prompt(text),
+                "n_predict": int(os.environ.get('LLM_CONTEXT_SIZE', '8192')),
+                "json_schema": document_extraction_grammar()
             }
         )
 
@@ -124,8 +110,8 @@ def extract_events_from_text(text, document_id, document_name):
             response_json = json.loads(response_text)
             events = json.loads(response_json['content'])
             events = [
-                {**event, "documentId": document_id, "documentName": document_name}
-                for event in events
+                {**event, "documentId": document_id, "document": [document_name], "id": f"{int(time.time() * 1000)}_{i}"}
+                for i, event in enumerate(events)
             ]
         except Exception as e:
             log_message(f'Error parsing LLM response: {e}')
@@ -138,7 +124,7 @@ def extract_events_from_text(text, document_id, document_name):
 
 @documents_bp.route('/upload', methods=['POST'])
 def upload_documents():
-    try:
+    # try:
         if 'documents' not in request.files:
             return jsonify({"message": "No files uploaded"}), 400
         
@@ -180,6 +166,7 @@ def upload_documents():
         
         data.timeline_events.extend(new_events)
         data.timeline_events.sort(key=lambda x: x.get('date', ''))
+        log_message(events, "Extracted events")
         
         return jsonify({
             "message": "Documents uploaded and processed successfully",
@@ -187,9 +174,9 @@ def upload_documents():
             "events": new_events
         }), 200
     
-    except Exception as e:
-        log_message(f"Error processing documents: {e}")
-        return jsonify({"message": "Error processing documents", "error": str(e)}), 500
+    # except Exception as e:
+    #     log_message(f"Error processing documents: {e}")
+    #     return jsonify({"message": "Error processing documents", "error": str(e)}), 500
 
 @documents_bp.route('/', methods=['GET'])
 def get_documents():
