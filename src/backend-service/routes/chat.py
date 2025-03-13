@@ -21,7 +21,7 @@ def create_timeline_context(events):
     return "\n".join([
         f"""Date: {event.get('date', '')}
       Summary: {event.get('summary', '')}
-      Document: {event.get('documentName', '')}
+      Document: {event.get('document', '')}
       Context: {event.get('context', '')}
       ---"""
         for event in events

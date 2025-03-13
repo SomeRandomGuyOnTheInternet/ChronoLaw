@@ -1,11 +1,11 @@
 #!/bin/bash
 
-# cd "./src/llm-service"
-# sh ./run.sh &
+cd "./src/llm-service"
+sh ./run.sh &
 
-# cd "../nougat-service"
-# source .venv/bin/activate
-# python app.py &
+cd "../nougat-service"
+source .venv/bin/activate
+python app.py &
 
 # Run backend-service
 pushd "src/backend-service" || exit

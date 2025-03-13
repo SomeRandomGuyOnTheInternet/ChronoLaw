@@ -48,7 +48,7 @@ const Mindmap = ({ timelineEvents, documents }) => {
         date: "2021-10-15",
         description: "Initial negotiation of the leasing agreement terms between Smith Corp and Acme Industries.",
         participants: ["John Davis", "Sarah Johnson", "Michael Chen"],
-        documents: ["Draft Agreement v1", "Meeting Minutes"],
+        document: "Draft Agreement v1",
         location: "Smith Corp HQ",
         context: "Initial phase of the leasing process"
       },
@@ -58,7 +58,7 @@ const Mindmap = ({ timelineEvents, documents }) => {
         date: "2021-10-15",
         description: "Final leasing agreement signed by all parties.",
         participants: ["John Davis", "Michael Chen", "Legal Team"],
-        documents: ["Signed Agreement", "Appendix A", "Appendix B"],
+        document: "Signed Agreement",
         location: "Acme Industries Office",
         context: "Completion of the agreement phase"
       },
@@ -68,7 +68,7 @@ const Mindmap = ({ timelineEvents, documents }) => {
         date: "2022-06-20",
         description: "Follow-up enquiry regarding the implementation of the leasing agreement terms.",
         participants: ["John Davis", "Support Team"],
-        documents: ["Email Thread", "Status Report"],
+        document: "Status Report",
         location: "Email Communication",
         context: "Post-agreement follow-up"
       },
@@ -78,7 +78,7 @@ const Mindmap = ({ timelineEvents, documents }) => {
         date: "2022-09-22",
         description: "Email from Michael Chen discussing potential issues with the current lease terms.",
         participants: ["Michael Chen", "John Davis", "Legal Team"],
-        documents: ["Email", "Attachment: Revised Terms"],
+        document: "Attachment: Revised Terms",
         location: "Email Communication",
         context: "Issue identification phase"
       }
@@ -157,7 +157,7 @@ const Mindmap = ({ timelineEvents, documents }) => {
           y: y,
           description: event.description,
           participants: event.participants || [],
-          documents: event.documents || [],
+          document: event.document || [],
           location: event.location || "",
           context: event.context || ""
         };
@@ -625,11 +625,9 @@ const Mindmap = ({ timelineEvents, documents }) => {
                     </Flex>
                   </Heading>
                   <VStack align="stretch" spacing={1}>
-                    {selectedNode.documents.map((doc, index) => (
-                      <Text key={index} pl={2} borderLeftWidth="2px" borderColor="blue.400">
-                        {doc}
-                      </Text>
-                    ))}
+                    <Text pl={2} borderLeftWidth="2px" borderColor="blue.400">
+                      {selectedNode.document}
+                    </Text>
                   </VStack>
                 </Box>
                 

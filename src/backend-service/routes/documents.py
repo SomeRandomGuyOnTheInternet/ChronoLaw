@@ -110,7 +110,7 @@ def extract_events_from_text(text, document_id, document_name):
             response_json = json.loads(response_text)
             events = json.loads(response_json['content'])
             events = [
-                {**event, "documentId": document_id, "document": [document_name], "id": f"{int(time.time() * 1000)}_{i}"}
+                {**event, "documentId": document_id, "document": document_name, "id": f"{int(time.time() * 1000)}_{i}"}
                 for i, event in enumerate(events)
             ]
         except Exception as e:
