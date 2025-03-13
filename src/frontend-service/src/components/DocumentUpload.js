@@ -13,7 +13,8 @@ import {
   Badge,
   Card,
   CardBody,
-  Divider
+  Divider,
+  useColorModeValue
 } from '@chakra-ui/react';
 import { useDropzone } from 'react-dropzone';
 import axios from 'axios';
@@ -111,6 +112,12 @@ const DocumentUpload = ({ onDocumentsProcessed, setIsLoading }) => {
     }
   };
 
+  // Color mode values
+  const borderColor = useColorModeValue('gray.300', 'gray.600');
+  const hoverBgColor = useColorModeValue('brand.50', 'brand.900');
+  const cardBgColor = useColorModeValue('white', 'gray.800');
+  const secondaryTextColor = useColorModeValue('gray.500', 'gray.400');
+
   return (
     <VStack spacing={4} align="stretch">
       <Heading size="lg">Upload Documents</Heading>
@@ -123,13 +130,13 @@ const DocumentUpload = ({ onDocumentsProcessed, setIsLoading }) => {
         {...getRootProps()}
         p={10}
         border="2px dashed"
-        borderColor={isDragActive ? 'brand.500' : 'gray.300'}
+        borderColor={isDragActive ? 'brand.500' : borderColor}
         borderRadius="md"
-        bg={isDragActive ? 'brand.50' : 'transparent'}
+        bg={isDragActive ? hoverBgColor : 'transparent'}
         textAlign="center"
         cursor="pointer"
         transition="all 0.2s"
-        _hover={{ borderColor: 'brand.400', bg: 'brand.50' }}
+        _hover={{ borderColor: 'brand.400', bg: hoverBgColor }}
       >
         <input {...getInputProps()} />
         {isDragActive ? (
@@ -137,13 +144,13 @@ const DocumentUpload = ({ onDocumentsProcessed, setIsLoading }) => {
         ) : (
           <VStack spacing={2}>
             <Text fontWeight="bold">Drag and drop files here, or click to select files</Text>
-            <Text fontSize="sm" color="gray.500">Only PDF and DOCX files are accepted</Text>
+            <Text fontSize="sm" color={secondaryTextColor}>Only PDF and DOCX files are accepted</Text>
           </VStack>
         )}
       </Box>
       
       {files.length > 0 && (
-        <Card variant="outline">
+        <Card variant="outline" bg={cardBgColor}>
           <CardBody>
             <VStack align="stretch" spacing={4}>
               <HStack justify="space-between">
@@ -169,7 +176,7 @@ const DocumentUpload = ({ onDocumentsProcessed, setIsLoading }) => {
                           {file.type.includes('pdf') ? 'PDF' : 'DOCX'}
                         </Badge>
                         <Text>{file.name}</Text>
-                        <Text fontSize="xs" color="gray.500">
+                        <Text fontSize="xs" color={secondaryTextColor}>
                           ({(file.size / 1024 / 1024).toFixed(2)} MB)
                         </Text>
                       </HStack>

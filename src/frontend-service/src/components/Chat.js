@@ -32,6 +32,7 @@ const Chat = ({ timelineEvents }) => {
 
   const userBgColor = useColorModeValue('brand.100', 'brand.900');
   const botBgColor = useColorModeValue('gray.100', 'gray.700');
+  const borderColor = useColorModeValue('gray.200', 'gray.700');
 
   // Scroll to bottom of messages
   const scrollToBottom = () => {
@@ -121,6 +122,7 @@ const Chat = ({ timelineEvents }) => {
               overflowY="auto"
               p={4}
               borderWidth="1px"
+              borderColor={borderColor}
               borderRadius="md"
               mb={4}
               grow={1}
@@ -139,7 +141,7 @@ const Chat = ({ timelineEvents }) => {
                       maxW="80%"
                     >
                       {message.sender === 'bot' && (
-                        <Avatar size="sm" name="ChronoLaw" bg="brand.500" />
+                        <Avatar size="sm" name="chronolaw" bg="brand.500" />
                       )}
 
                       <Card
@@ -147,7 +149,7 @@ const Chat = ({ timelineEvents }) => {
                         borderRadius="lg"
                       >
                         <CardBody py={2} px={3}>
-                          <Text>{message.text}</Text>
+                          <Text whiteSpace="pre-wrap">{message.text}</Text>
                         </CardBody>
                       </Card>
 
@@ -161,7 +163,7 @@ const Chat = ({ timelineEvents }) => {
                 {isLoading && (
                   <Flex justify="flex-start">
                     <HStack alignItems="center" spacing={2}>
-                      <Avatar size="sm" name="ChronoLaw" bg="brand.500" />
+                      <Avatar size="sm" name="chronolaw" bg="brand.500" />
                       <Card bg={botBgColor} borderRadius="lg">
                         <CardBody py={2} px={4}>
                           <Spinner size="sm" mr={2} />

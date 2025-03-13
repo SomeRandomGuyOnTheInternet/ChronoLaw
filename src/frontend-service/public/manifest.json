@@ -1,6 +1,6 @@
 {
-  "short_name": "ChronoLaw",
-  "name": "ChronoLaw - Legal Case Timeline Generator",
+  "short_name": "chronolaw",
+  "name": "chronolaw - Legal Case Timeline Generator",
   "icons": [
     {
       "src": "favicon.ico",

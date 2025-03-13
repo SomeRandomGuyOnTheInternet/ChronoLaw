@@ -1,110 +1,130 @@
 import React, { useState } from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import {
   Box,
   Flex,
   Heading,
   Text,
-  Tabs,
-  TabList,
-  TabPanels,
-  Tab,
-  TabPanel,
-  Container,
-  VStack,
-  Spinner,
-  Modal,
-  ModalOverlay,
-  ModalContent,
-  ModalHeader,
-  ModalBody,
-  useColorModeValue
+  useColorModeValue,
+  useColorMode,
+  IconButton,
+  Image
 } from '@chakra-ui/react';
-import DocumentUpload from './components/DocumentUpload';
-import Timeline from './components/Timeline';
-import Chat from './components/Chat';
+import { MoonIcon, SunIcon } from '@chakra-ui/icons';
+import CaseSelection from './components/CaseSelection';
+import Case from './components/Case';
+import LandingPage from './components/LandingPage';
 
 function App() {
-  const [documents, setDocuments] = useState([]);
-  const [timelineEvents, setTimelineEvents] = useState([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [tabIndex, setTabIndex] = useState(0);
-
+  // const navigate = useNavigate();
+  const [selectedCase, setSelectedCase] = useState(null);
+  
+  const { colorMode, toggleColorMode } = useColorMode();
   const bgColor = useColorModeValue('gray.50', 'gray.900');
-  const headerBgColor = useColorModeValue('brand.600', 'brand.800');
-  const footerBgColor = useColorModeValue('brand.600', 'brand.800');
+  const headerBgColor = useColorModeValue('gray.50', 'gray.900');
+  const footerBgColor = useColorModeValue('gray.50', 'gray.900');
+  const borderColor = useColorModeValue('gray.200', 'gray.750');
+  const textColor = useColorModeValue('gray.800', 'white');
 
-  const handleDocumentsProcessed = (data) => {
-    setDocuments([...documents, ...data.documents]);
-    setTimelineEvents([...timelineEvents, ...data.events]);
-    setTabIndex(1); // Switch to Timeline tab
-    setIsLoading(false);
+  const handleSelectCase = (caseItem) => {
+    setSelectedCase(caseItem);
+  };
+
+  // Reset selected case when navigating to cases page
+  const resetSelectedCase = () => {
+    setSelectedCase(null);
   };
 
   return (
-    <Flex direction="column" minH="100vh" bg={bgColor}>
-      {/* Header */}
-      <Box as="header" bg={headerBgColor} color="white" py={4} px={8} textAlign="center">
-        <Heading as="h1" size="xl">ChronoLaw</Heading>
-        <Text fontSize="lg" mt={1}>Legal Case Timeline Generator</Text>
-      </Box>
-
-      {/* Main Content */}
-      <Container maxW="container.xl" flex="1" py={8}>
-        <Tabs 
-          isFitted 
-          variant="enclosed" 
-          colorScheme="brand" 
-          index={tabIndex} 
-          onChange={setTabIndex}
-          height="100%"
-        >
-          <TabList mb={4}>
-            <Tab>Documents</Tab>
-            <Tab isDisabled={timelineEvents.length === 0}>Timeline</Tab>
-            <Tab>Chat</Tab>
-          </TabList>
-
-          <TabPanels>
-            <TabPanel>
-              <DocumentUpload 
-                onDocumentsProcessed={handleDocumentsProcessed}
-                setIsLoading={setIsLoading}
+    <Router>
+      <Flex direction="column" minH="100vh" bg={bgColor}>
+        {/* Header - Only show on non-landing pages */}
+        <Routes>
+          <Route path="/" element={null} />
+          <Route path="*" element={
+            <Flex 
+              as="header" 
+              bg={headerBgColor} 
+              color={textColor} 
+              py={4} 
+              px={8} 
+              alignItems="center" 
+              justifyContent="space-between" 
+              borderWidth="2px" 
+              borderColor={borderColor} 
+              borderStyle="solid" 
+              borderTop={0} 
+              borderLeft={0} 
+              borderRight={0}
+            >
+              <Box textAlign="center" flex="1" display="flex" justifyContent="center" alignItems="center">
+                <Image 
+                  src="/chronolaw-logo.png" 
+                  alt="chronolaw Logo" 
+                  height="60px"
+                  filter={colorMode === 'dark' ? 'brightness(1.2)' : 'none'}
+                />
+                <Heading size="xl" ml={4}>
+                  chronolaw
+                </Heading>
+              </Box>
+              <IconButton
+                aria-label="Toggle dark mode"
+                icon={colorMode === 'light' ? <MoonIcon /> : <SunIcon />}
+                onClick={toggleColorMode}
+                variant="ghost"
+                color={textColor}
+                fontSize="20px"
+                _hover={{ bg: 'whiteAlpha.200' }}
               />
-            </TabPanel>
-            <TabPanel>
-              <Timeline 
-                events={timelineEvents}
-                documents={documents}
-              />
-            </TabPanel>
-            <TabPanel>
-              <Chat 
-                timelineEvents={timelineEvents}
-              />
-            </TabPanel>
-          </TabPanels>
-        </Tabs>
-      </Container>
+            </Flex>
+          } />
+        </Routes>
 
-      {/* Footer */}
-      <Box as="footer" bg={footerBgColor} color="white" py={4} textAlign="center">
-        <Text>&copy; {new Date().getFullYear()} ChronoLaw - All Rights Reserved</Text>
-      </Box>
+        {/* Main Content */}
+        <Box flex="1">
+          <Routes>
+            <Route path="/" element={<LandingPage />} />
+            <Route 
+              path="/cases" 
+              element={
+                <CaseSelection onSelectCase={handleSelectCase} />
+              } 
+            />
+            <Route 
+              path="/case" 
+              element={
+                selectedCase ? 
+                <Case selectedCase={selectedCase} onBack={resetSelectedCase} /> : 
+                <Navigate to="/cases" />
+              } 
+            />
+          </Routes>
+        </Box>
 
-      {/* Loading Modal */}
-      <Modal isOpen={isLoading} closeOnOverlayClick={false} isCentered>
-        <ModalOverlay />
-        <ModalContent>
-          <ModalHeader textAlign="center">Processing Documents</ModalHeader>
-          <ModalBody pb={6}>
-            <VStack spacing={4} align="center">
-              <Spinner size="xl" thickness="4px" speed="0.65s" color="brand.500" />
-              <Text>This may take a few minutes depending on the size and number of documents.</Text>
-            </VStack>
-          </ModalBody>
-        </ModalContent>
-      </Modal>
-    </Flex>
+        {/* Footer - Only show on non-landing pages */}
+        <Routes>
+          <Route path="/" element={null} />
+          <Route path="*" element={
+            <Box 
+              as="footer" 
+              bg={footerBgColor} 
+              color="white" 
+              py={4} 
+              textAlign="center" 
+              borderWidth="2px" 
+              borderColor={borderColor} 
+              borderStyle="solid" 
+              borderBottom={0} 
+              borderLeft={0} 
+              borderRight={0}
+            >
+              <Text>&copy; {new Date().getFullYear()} chronolaw - All Rights Reserved</Text>
+            </Box>
+          } />
+        </Routes>
+      </Flex>
+    </Router>
   );
 }
 

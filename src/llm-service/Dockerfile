@@ -12,9 +12,9 @@ RUN apt-get update && \
 # RUN apt-get install libssl-dev
 # RUN apt-get install openssl
 
-WORKDIR /app/deps
+WORKDIR /app
 
-RUN git clone https://github.com/Thalhammer/jwt-cpp.git
+COPY . .
 
 WORKDIR /app/deps/jwt-cpp
 
@@ -22,9 +22,6 @@ RUN cmake .
 RUN cmake --build .
 RUN cmake --install .
 
-WORKDIR /app
-
-COPY . .
 
 RUN if [ "$TARGETARCH" = "amd64" ]; then \
         cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DLLAMA_CURL=ON -DGGML_NATIVE=OFF -DGGML_BACKEND_DL=ON -DGGML_CPU_ALL_VARIANTS=ON; \
